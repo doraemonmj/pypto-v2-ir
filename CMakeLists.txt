@@ -13,7 +13,25 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.15)
-project(pypto_core)
+
+# Support both scikit-build and native CMake builds
+if(DEFINED SKBUILD_PROJECT_NAME)
+    # Building with scikit-build-core
+    project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION})
+    set(SKBUILD_MODE ON)
+else()
+    # Building with native CMake
+    file(STRINGS "${CMAKE_SOURCE_DIR}/pyproject.toml" _version_line LIMIT_COUNT 1 REGEX "^version ?= ?\"")
+    if(_version_line)
+        string(REGEX REPLACE "^version ?= ?\"([^\"]*)\".*" "\\1" _pypto_version "${_version_line}")
+        project(pypto VERSION ${_pypto_version})
+    else()
+        message(FATAL_ERROR "Failed to parse version from pyproject.toml")
+    endif()
+    set(SKBUILD_MODE OFF)
+endif()
+
+set(LIBRARY_NAME "${PROJECT_NAME}_core")
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -42,7 +60,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
 # Find Python and pybind11
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Include directories
