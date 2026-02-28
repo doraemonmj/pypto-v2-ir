@@ -12,6 +12,7 @@
 #include "pypto/ir/transforms/passes.h"
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
@@ -107,6 +108,14 @@ void BindPass(nb::module_& m) {
       .def(nb::init<VerificationMode>(), nb::arg("mode"),
            "Create a verification instrument with the given mode");
 
+  // CallbackInstrument
+  nb::class_<CallbackInstrument, PassInstrument>(passes, "CallbackInstrument",
+                                                 "Instrument that invokes callbacks before/after each pass")
+      .def(nb::init<CallbackInstrument::Callback, CallbackInstrument::Callback, std::string>(),
+           nb::arg("before_pass") = nullptr, nb::arg("after_pass") = nullptr,
+           nb::arg("name") = "CallbackInstrument",
+           "Create a callback instrument with optional before/after callbacks");
+
   // PassContext
   nb::class_<PassContext>(passes, "PassContext",
                           "Context that holds instruments and pass configuration.\n\n"
@@ -124,6 +133,7 @@ void BindPass(nb::module_& m) {
       .def("__exit__", [](PassContext& self, const nb::args&) { self.ExitContext(); })
       .def("get_verification_level", &PassContext::GetVerificationLevel,
            "Get the verification level for this context")
+      .def("get_instruments", &PassContext::GetInstruments, "Get the instruments registered on this context")
       .def_static("current", &PassContext::Current, nb::rv_policy::reference,
                   "Get the currently active context, or None if no context is active");
 

@@ -12,6 +12,7 @@
 #ifndef PYPTO_IR_TRANSFORMS_PASS_CONTEXT_H_
 #define PYPTO_IR_TRANSFORMS_PASS_CONTEXT_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -86,6 +87,29 @@ class VerificationInstrument : public PassInstrument {
 };
 
 /**
+ * @brief Instrument that invokes user-provided callbacks before/after each pass
+ *
+ * Enables lightweight, ad-hoc instrumentation (e.g., IR dumping, logging)
+ * without subclassing PassInstrument. Null callbacks are silently skipped.
+ */
+class CallbackInstrument : public PassInstrument {
+ public:
+  using Callback = std::function<void(const Pass&, const ProgramPtr&)>;
+
+  explicit CallbackInstrument(Callback before_pass = nullptr, Callback after_pass = nullptr,
+                              std::string name = "CallbackInstrument");
+
+  void RunBeforePass(const Pass& pass, const ProgramPtr& program) override;
+  void RunAfterPass(const Pass& pass, const ProgramPtr& program) override;
+  [[nodiscard]] std::string GetName() const override;
+
+ private:
+  Callback before_pass_;
+  Callback after_pass_;
+  std::string name_;
+};
+
+/**
  * @brief Context that holds instruments and manages a thread-local stack
  *
  * PassContext provides a `with`-style nesting mechanism. When active, Pass::operator()
@@ -131,6 +155,11 @@ class PassContext {
    * @brief Get the verification level for this context
    */
   [[nodiscard]] VerificationLevel GetVerificationLevel() const;
+
+  /**
+   * @brief Get the instruments registered on this context
+   */
+  [[nodiscard]] const std::vector<PassInstrumentPtr>& GetInstruments() const;
 
   /**
    * @brief Get the currently active context (top of thread-local stack)
