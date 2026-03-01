@@ -1,18 +1,18 @@
-# Operator System
+# 算子系统
 
-Type-safe operator definitions with automatic type deduction, organized into modular categories (TensorOp, BlockOp, SyncOp).
+类型 (Type) 安全的算子定义，支持自动类型推导，按模块化分类组织（TensorOp、BlockOp、SyncOp）。
 
-## Operator Categories
+## 算子分类
 
-| Category | Types | Use Case | File Location |
-| -------- | ----- | -------- | ------------- |
-| **TensorOp** | TensorType | N-D tensor operations with broadcasting | `src/ir/op/tensor_ops/` |
-| **BlockOp** | TileType | Hardware-optimized block operations | `src/ir/op/block_ops/` |
-| **SyncOp** | UnknownType/PipeType | Pipeline barriers and synchronization | `src/ir/op/sync_ops/` |
+| 分类 | 类型 | 用途 | 文件位置 |
+| ---- | ---- | ---- | -------- |
+| **TensorOp** | TensorType | 支持广播的 N 维张量 (Tensor) 操作 | `src/ir/op/tensor_ops/` |
+| **BlockOp** | TileType | 硬件优化的块操作 | `src/ir/op/block_ops/` |
+| **SyncOp** | UnknownType/PipeType | 流水线屏障和同步 | `src/ir/op/sync_ops/` |
 
-**Key Features**: Fluent API, automatic type deduction, kwargs for metadata, NumPy-style broadcasting, type promotion, dynamic dimensions (`kDynamicDim`)
+**主要特性**：流式 API、自动类型推导、kwargs 元数据、NumPy 风格广播、类型提升、动态维度（`kDynamicDim`）
 
-## Type System
+## 类型系统
 
 ```cpp
 // TensorType: N-dimensional tensors
@@ -26,35 +26,35 @@ constexpr int64_t kDynamicDim = -1;
 auto dynamic_dim = make_int(kDynamicDim);
 ```
 
-| Type | Dimensions | Use Case | Memory |
-| ---- | ---------- | -------- | ------ |
-| **TensorType** | N-D | General tensors, function params/returns | DDR (optional MemRef) |
-| **TileType** | N-D | Hardware-optimized tiles in unified buffers | Unified buffer (optional MemRef) |
-| **ScalarType** | 0D | Scalar values | Register |
-| **UnknownType** | N/A | No return value (sync ops) | N/A |
+| 类型 | 维度 | 用途 | 内存 |
+| ---- | ---- | ---- | ---- |
+| **TensorType** | N 维 | 通用张量、函数参数/返回值 | DDR（可选 MemRef） |
+| **TileType** | N 维 | 统一缓冲区中的硬件优化 Tile | 统一缓冲区（可选 MemRef） |
+| **ScalarType** | 0 维 | 标量值 | 寄存器 |
+| **UnknownType** | 无 | 无返回值（同步操作） | 无 |
 
-## REGISTER_OP Fluent API
+## REGISTER_OP 流式 API
 
-| Method | Purpose | Example |
-| ------ | ------- | ------- |
-| `set_op_category(str)` | Operator category | `.set_op_category("TensorOp")` |
-| `set_description(str)` | Human-readable description | `.set_description("Element-wise add")` |
-| `add_argument(name, desc)` | Positional Expr argument | `.add_argument("lhs", "Left tensor")` |
-| `no_argument()` | No arguments (sync ops) | `.no_argument()` |
-| `set_attr<T>(name)` | Kwarg schema (T: bool, int, DataType, etc.) | `.set_attr<bool>("a_trans")` |
-| `set_pipe(PipeType)` | Hardware pipeline type | `.set_pipe(PipeType::S)` |
-| `f_deduce_type(fn)` | Type deduction function | `.f_deduce_type(DeduceAddType)` |
+| 方法 | 用途 | 示例 |
+| ---- | ---- | ---- |
+| `set_op_category(str)` | 算子分类 | `.set_op_category("TensorOp")` |
+| `set_description(str)` | 人类可读描述 | `.set_description("Element-wise add")` |
+| `add_argument(name, desc)` | 位置 Expr 参数 | `.add_argument("lhs", "Left tensor")` |
+| `no_argument()` | 无参数（同步操作） | `.no_argument()` |
+| `set_attr<T>(name)` | Kwarg 模式（T: bool, int, DataType 等） | `.set_attr<bool>("a_trans")` |
+| `set_pipe(PipeType)` | 硬件流水线类型 | `.set_pipe(PipeType::S)` |
+| `f_deduce_type(fn)` | 类型推导函数 | `.f_deduce_type(DeduceAddType)` |
 
-**Type Deduction Signature:**
+**类型推导签名：**
 
 ```cpp
 std::function<TypePtr(const std::vector<ExprPtr>& args,
                       const std::vector<std::pair<std::string, std::any>>& kwargs)>
 ```
 
-## C++ Registration Examples
+## C++ 注册示例
 
-### Simple Elementwise Operator
+### 简单逐元素算子
 
 ```cpp
 // src/ir/op/tensor_ops/elementwise.cpp
@@ -73,7 +73,7 @@ REGISTER_OP("tensor.add")
     });
 ```
 
-### Operator with Kwargs
+### 带 Kwargs 的算子
 
 ```cpp
 // src/ir/op/tensor_ops/matmul.cpp
@@ -110,7 +110,7 @@ REGISTER_OP("tensor.matmul")
     .f_deduce_type(DeduceMatMul);
 ```
 
-## Python Usage
+## Python 用法
 
 ```python
 from pypto.pypto_core import DataType, ir
@@ -137,20 +137,20 @@ assert ir.is_op_registered("tensor.add")
 op_instance = ir.get_op("tensor.add")
 ```
 
-## Kwargs (Keyword Arguments)
+## Kwargs（关键字参数）
 
-Call expressions separate Expr arguments from metadata parameters using kwargs.
+Call 表达式 (Expression) 将 Expr 参数与元数据参数通过 kwargs 分离。
 
-### Kwargs vs Args vs Attributes
+### Kwargs vs Args vs 属性 (Property)
 
-| - | **Args** | **Kwargs** | **Op Attributes** |
-| - | -------- | ---------- | ----------------- |
-| **Type** | `ExprPtr` | `std::any` | Type-erased |
-| **Scope** | Per-Call | Per-Call | Global |
-| **Use** | Tensors, dims, offsets | `out_dtype`, flags, modes | Device, category |
-| **Access** | `call.args_` | `call.kwargs_` | `op.get_attr()` |
+| - | **Args** | **Kwargs** | **Op 属性** |
+| - | -------- | ---------- | ----------- |
+| **类型** | `ExprPtr` | `std::any` | 类型擦除 |
+| **作用域** | 每次调用 | 每次调用 | 全局 |
+| **用途** | 张量、维度、偏移 | `out_dtype`、标志、模式 | 设备、分类 |
+| **访问方式** | `call.args_` | `call.kwargs_` | `op.get_attr()` |
 
-### C++ - Reading Kwargs
+### C++ - 读取 Kwargs
 
 ```cpp
 TypePtr DeduceCastType(const std::vector<ExprPtr>& args,
@@ -171,18 +171,18 @@ TypePtr DeduceCastType(const std::vector<ExprPtr>& args,
 }
 ```
 
-### Python - Using Kwargs
+### Python - 使用 Kwargs
 
 ```python
 result = op.tensor.matmul(a, b, out_dtype=DataType.FP32, a_trans=True)
 print(result.kwargs)  # {'out_dtype': 51, 'a_trans': True}
 ```
 
-## Broadcasting and Type Promotion
+## 广播与类型提升
 
-### NumPy-style Broadcasting
+### NumPy 风格广播
 
-Dimensions aligned right to left:
+维度从右向左对齐：
 
 ```text
 [4, 8] + [4, 8] → [4, 8]  # Exact match
@@ -192,9 +192,9 @@ Dimensions aligned right to left:
 [4, 8] + [5]    → Error   # 8 ≠ 5
 ```
 
-### Type Promotion
+### 类型提升
 
-Standard numeric rules: float > int, larger > smaller, signed > unsigned (same size).
+标准数值规则：浮点 > 整数，大尺寸 > 小尺寸，有符号 > 无符号（相同大小时）。
 
 ```text
 INT32 + INT32 → INT32
@@ -203,16 +203,16 @@ INT32 + INT64 → INT64  (larger size)
 UINT32 + INT32 → INT32 (signed precedence)
 ```
 
-## TensorOp: N-Dimensional Tensor Operations
+## TensorOp：N 维张量操作
 
-**Purpose**: General N-dimensional tensors with full broadcasting
-**Type**: `TensorType` (arbitrary dimensions)
-**Location**: `src/ir/op/tensor_ops/`
-**Python API**: `from pypto.ir.op import tensor`
+**用途**：支持完整广播的通用 N 维张量
+**类型**：`TensorType`（任意维度）
+**位置**：`src/ir/op/tensor_ops/`
+**Python API**：`from pypto.ir.op import tensor`
 
-**Operations:** `tensor.add/sub/mul/div` (element-wise with full N-D broadcasting)
+**操作：** `tensor.add/sub/mul/div`（逐元素，支持完整 N 维广播）
 
-**Example:**
+**示例：**
 
 ```python
 from pypto.ir.op import tensor
@@ -226,30 +226,30 @@ with ib.function("tensor_example") as f:
     ib.return_stmt(result)
 ```
 
-## BlockOp: Hardware-Optimized Block Operations
+## BlockOp：硬件优化块操作
 
-**Purpose**: Hardware-optimized block operations with explicit memory management
-**Type**: `TileType` (tiles in unified buffers)
-**Location**: `src/ir/op/block_ops/`
-**Python API**: `from pypto.ir.op import block`
+**用途**：带有显式内存管理的硬件优化块操作
+**类型**：`TileType`（统一缓冲区中的 Tile）
+**位置**：`src/ir/op/block_ops/`
+**Python API**：`from pypto.ir.op import block`
 
-**Design**: Uses `TileType` (not separate `BlockType`) for consistency. Namespace `block.*` + `TileType` clearly indicates hardware-optimized tile operations.
+**设计**：使用 `TileType`（而非单独的 `BlockType`）以保持一致性。命名空间 `block.*` + `TileType` 清楚地表示硬件优化的 Tile 操作。
 
-### Operations
+### 操作列表
 
-| Category | Operations | Description |
-| -------- | ---------- | ----------- |
-| **Memory** | `block.get_block_idx` | Get block index (→ ScalarType) |
-| - | `block.load` | TensorType → TileType (DDR to unified buffer) |
-| - | `block.store` | TileType → TensorType (unified buffer to DDR) |
-| **Element-wise** | `block.add/sub/mul/div` | Tile-Tile operations |
-| - | `block.adds/subs/muls/divs` | Tile-Scalar operations |
-| **Unary** | `block.sqrt` | Element-wise square root |
-| **Reduction** | `block.sum` | Reduction along axis (axis, keepdim) |
+| 分类 | 操作 | 描述 |
+| ---- | ---- | ---- |
+| **内存** | `block.get_block_idx` | 获取块索引（返回 ScalarType） |
+| - | `block.load` | TensorType → TileType（DDR 到统一缓冲区） |
+| - | `block.store` | TileType → TensorType（统一缓冲区到 DDR） |
+| **逐元素** | `block.add/sub/mul/div` | Tile-Tile 操作 |
+| - | `block.adds/subs/muls/divs` | Tile-Scalar 操作 |
+| **一元** | `block.sqrt` | 逐元素平方根 |
+| **规约** | `block.sum` | 沿轴规约（axis, keepdim） |
 
-**Data Flow:** `TensorType (DDR) → block.load → TileType (Unified Buffer) → block.{ops} → TileType → block.store → TensorType (DDR)`
+**数据流：** `TensorType (DDR) → block.load → TileType (Unified Buffer) → block.{ops} → TileType → block.store → TensorType (DDR)`
 
-### Example Usage
+### 使用示例
 
 ```python
 from pypto.ir.op import block
@@ -271,22 +271,22 @@ with ib.function("block_computation") as f:
     ib.return_stmt(result)
 ```
 
-## SyncOp: Synchronization Operations
+## SyncOp：同步操作
 
-**Purpose**: Hardware synchronization and barriers
-**Type**: `UnknownType` (no return), use in `EvalStmt`
-**Location**: `src/ir/op/sync_ops/`
-**Python API**: `from pypto.ir.op import system`
+**用途**：硬件同步与屏障
+**类型**：`UnknownType`（无返回值），在 `EvalStmt` 中使用
+**位置**：`src/ir/op/sync_ops/`
+**Python API**：`from pypto.ir.op import system`
 
-| Operation | Description | Kwargs |
-| --------- | ----------- | ------ |
-| `system.bar_all` | Global barrier | None |
-| `system.bar_v` | Vector barrier | None |
-| `system.bar_m` | Matrix barrier | None |
-| `system.sync_src` | Set sync flag | `set_pipe`, `wait_pipe`, `event_id` |
-| `system.sync_dst` | Wait sync flag | `set_pipe`, `wait_pipe`, `event_id` |
+| 操作 | 描述 | Kwargs |
+| ---- | ---- | ------ |
+| `system.bar_all` | 全局屏障 | 无 |
+| `system.bar_v` | 向量屏障 | 无 |
+| `system.bar_m` | 矩阵屏障 | 无 |
+| `system.sync_src` | 设置同步标志 | `set_pipe`, `wait_pipe`, `event_id` |
+| `system.sync_dst` | 等待同步标志 | `set_pipe`, `wait_pipe`, `event_id` |
 
-**Python Example:**
+**Python 示例：**
 
 ```python
 from pypto.ir.op import system
@@ -294,7 +294,7 @@ ib.emit(system.bar_all())
 ib.emit(system.sync_src(set_pipe=2, wait_pipe=4, event_id=0))
 ```
 
-**C++ Registration (`src/ir/op/sync_ops/sync.cpp`):**
+**C++ 注册 (`src/ir/op/sync_ops/sync.cpp`)：**
 
 ```cpp
 REGISTER_OP("system.bar_all")
@@ -313,30 +313,30 @@ REGISTER_OP("system.sync_src")
     .f_deduce_type(DeduceUnknownType);
 ```
 
-## File Organization
+## 文件组织
 
-| Directory/File | Contents |
-| -------------- | -------- |
-| `src/ir/op/type_inference.cpp` | Shared type inference utilities |
+| 目录/文件 | 内容 |
+| --------- | ---- |
+| `src/ir/op/type_inference.cpp` | 共享的类型推断工具 |
 | `tensor_ops/elementwise.cpp` | TensorOp: add, sub, mul, div |
 | `block_ops/memory.cpp` | BlockOp: load, store, get_block_idx |
-| `block_ops/elementwise.cpp` | BlockOp: add, mul, div, adds, muls, etc. |
-| `block_ops/reduction.cpp` | BlockOp: sum (with axis, keepdim) |
+| `block_ops/elementwise.cpp` | BlockOp: add, mul, div, adds, muls 等 |
+| `block_ops/reduction.cpp` | BlockOp: sum（含 axis, keepdim） |
 | `block_ops/unary.cpp` | BlockOp: sqrt |
 | `sync_ops/sync.cpp` | SyncOp: sync_src, sync_dst, barriers |
 
-**Benefits**:
+**优势**：
 
-- **Modularity**: Self-contained operator categories
-- **Build Performance**: Changes to one category don't rebuild others
-- **Maintainability**: Easy to locate and modify operators
-- **Scalability**: Straightforward to add new operators
+- **模块化**：自包含的算子分类
+- **构建性能**：修改一个分类不会重新构建其他分类
+- **可维护性**：易于定位和修改算子
+- **可扩展性**：直接添加新算子
 
-## Adding New Operations
+## 添加新操作
 
-1. **Choose category file**: `src/ir/op/tensor_ops/elementwise.cpp`, `matmul.cpp`, `reduction.cpp`, or `src/ir/op/block_ops/memory.cpp`, `unary.cpp`
+1. **选择分类文件**：`src/ir/op/tensor_ops/elementwise.cpp`、`matmul.cpp`、`reduction.cpp`，或 `src/ir/op/block_ops/memory.cpp`、`unary.cpp`
 
-2. **Implement type deduction**:
+2. **实现类型推导**：
 
    ```cpp
    TypePtr DeduceType(const std::vector<ExprPtr>& args,
@@ -347,7 +347,7 @@ REGISTER_OP("system.sync_src")
    }
    ```
 
-3. **Register**:
+3. **注册**：
 
    ```cpp
    REGISTER_OP("tensor.matmul")
@@ -358,7 +358,7 @@ REGISTER_OP("system.sync_src")
        .f_deduce_type(DeduceType);
    ```
 
-4. **Python wrapper** (`python/pypto/ir/op/tensor_ops.py`):
+4. **Python 封装** (`python/pypto/ir/op/tensor_ops.py`)：
 
    ```python
    def matmul(lhs: Expr, rhs: Expr, out_dtype=None, a_trans=False) -> Call:
@@ -368,16 +368,16 @@ REGISTER_OP("system.sync_src")
        return _ir_core.create_op_call("tensor.matmul", [lhs, rhs], kwargs, Span.unknown())
    ```
 
-5. **Add tests** in `tests/ut/ir/` and update `CMakeLists.txt` if needed
+5. **添加测试**，位于 `tests/ut/ir/`，如需要则更新 `CMakeLists.txt`
 
-## References
+## 参考
 
-- Common constants: `include/pypto/core/common.h`
-- Type definitions: `include/pypto/ir/type.h`
-- Operator registry: `include/pypto/ir/op_registry.h`
-- Type inference utilities: `include/pypto/ir/type_inference.h`
-- Type inference implementation: `src/ir/op/type_inference.cpp`
-- Operator registry implementation: `src/ir/op_registry.cpp`
-- Tensor operator implementations: `src/ir/op/tensor_ops/`
-- Block operator implementations: `src/ir/op/block_ops/`
-- Sync operator implementations: `src/ir/op/sync_ops/`
+- 常用常量：`include/pypto/core/common.h`
+- 类型定义：`include/pypto/ir/type.h`
+- 算子注册表：`include/pypto/ir/op_registry.h`
+- 类型推断工具：`include/pypto/ir/type_inference.h`
+- 类型推断实现：`src/ir/op/type_inference.cpp`
+- 算子注册表实现：`src/ir/op_registry.cpp`
+- 张量算子实现：`src/ir/op/tensor_ops/`
+- 块算子实现：`src/ir/op/block_ops/`
+- 同步算子实现：`src/ir/op/sync_ops/`

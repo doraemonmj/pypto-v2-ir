@@ -1,12 +1,12 @@
-# PyPTO IR Types and Examples
+# PyPTO IR 类型与示例
 
-This document covers the type system and provides practical usage examples.
+本文档介绍类型 (Type) 系统并提供实用的使用示例。
 
-## Type System
+## 类型系统
 
 ### ScalarType
 
-Represents primitive scalar types.
+表示原始标量类型。
 
 ```python
 from pypto import DataType, ir
@@ -15,13 +15,13 @@ int_type = ir.ScalarType(DataType.INT64)
 float_type = ir.ScalarType(DataType.FP32)
 ```
 
-**Supported DataTypes:** INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FP16, FP32, FP64, BOOL, INDEX
+**支持的 DataType：** INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FP16, FP32, FP64, BOOL, INDEX
 
-> **Note:** `INDEX` is a semantic alias for `INT64`, used for index computations (loop variables, dimensions, offsets, strides). `INDEX == INT64` is `true` — it shares the same type code and string representation.
+> **注意：** `INDEX` 是 `INT64` 的语义别名，用于索引计算（循环变量、维度、偏移量、步长）。`INDEX == INT64` 为 `true` -- 它们共享相同的类型代码和字符串表示。
 
 ### TensorType
 
-Multi-dimensional tensor with optional memory reference.
+带可选内存引用 (MemRef) 的多维张量 (Tensor)。
 
 ```python
 span = ir.Span.unknown()
@@ -35,9 +35,9 @@ memref = ir.MemRef(ir.MemorySpace.DDR, ir.ConstInt(0x1000, DataType.INT64, span)
 tensor_with_memref = ir.TensorType(shape, DataType.FP32, memref)
 ```
 
-### TensorType with TensorView
+### 带 TensorView 的 TensorType
 
-Tensor with layout and stride information for optimized memory access.
+带有布局和步长信息的张量，用于优化内存访问。
 
 ```python
 # Create tensor with tensor view
@@ -57,15 +57,15 @@ memref = ir.MemRef(ir.MemorySpace.Vec, ir.ConstInt(0x2000, DataType.INT64, span)
 tensor_with_both = ir.TensorType(shape, DataType.FP16, memref=memref, tensor_view=tensor_view)
 ```
 
-**TensorLayout values:**
+**TensorLayout 值：**
 
-- `ND`: ND layout
-- `DN`: DN layout
-- `NZ`: NZ layout
+- `ND`：ND 布局
+- `DN`：DN 布局
+- `NZ`：NZ 布局
 
 ### TileType
 
-Specialized tensor with optional memory and view information for hardware-optimized operations.
+专用张量类型，带可选内存和视图信息，用于硬件优化操作。
 
 ```python
 # Basic 16x16 tile
@@ -91,7 +91,7 @@ tile_with_view = ir.TileType(shape, DataType.FP16, memref, tile_view)
 
 ### TupleType
 
-Heterogeneous tuple of types.
+异构类型元组。
 
 ```python
 # Scalar tuple: (int, float)
@@ -109,7 +109,7 @@ nested = ir.TupleType([
 
 ### PipeType
 
-Hardware execution pipelines or synchronization barriers.
+硬件执行管线或同步屏障。
 
 ```python
 pipe_s = ir.PipeType(ir.PipeType.S)    # Scalar pipe
@@ -120,26 +120,26 @@ pipe_all = ir.PipeType(ir.PipeType.ALL) # All pipes
 
 ### UnknownType
 
-Placeholder for unknown or inferred types.
+未知或待推断类型的占位符。
 
 ```python
 unknown = ir.UnknownType()
 ```
 
-### MemorySpace Enum
+### MemorySpace 枚举
 
-| Value | Description |
-| ----- | ----------- |
-| `DDR` | Main memory (off-chip) |
-| `Vec` | Vector/unified buffer (on-chip) |
-| `Mat` | Matrix/L1 buffer |
-| `Left` | Left matrix operand buffer |
-| `Right` | Right matrix operand buffer |
-| `Acc` | Accumulator buffer |
+| 值 | 说明 |
+| -- | ---- |
+| `DDR` | 主存储器（片外） |
+| `Vec` | 向量/统一缓冲区（片上） |
+| `Mat` | 矩阵/L1 缓冲区 |
+| `Left` | 左矩阵操作数缓冲区 |
+| `Right` | 右矩阵操作数缓冲区 |
+| `Acc` | 累加器缓冲区 |
 
-## Python Usage Examples
+## Python 使用示例
 
-### Example 1: Building Expressions
+### 示例 1：构建表达式
 
 ```python
 from pypto import DataType, ir
@@ -161,7 +161,7 @@ denominator = ir.Add(x, y, dtype, span)
 result = ir.FloatDiv(numerator, denominator, dtype, span)
 ```
 
-### Example 2: Control Flow (Absolute Value)
+### 示例 2：控制流（绝对值）
 
 ```python
 # if (x >= 0) then { result = x } else { result = -x }
@@ -176,7 +176,7 @@ else_assign = ir.AssignStmt(result, ir.Neg(x, dtype, span), span)
 abs_stmt = ir.IfStmt(condition, then_assign, else_assign, [result], span)
 ```
 
-### Example 3: Loop with Accumulation
+### 示例 3：带累加的循环
 
 ```python
 # for i, (sum,) in pl.range(0, n, 1, init_values=(0,)):
@@ -195,7 +195,7 @@ sum_final = ir.Var("sum_final", ir.ScalarType(dtype), span)
 loop = ir.ForStmt(i, zero, n, one, [sum_iter], yield_stmt, [sum_final], span)
 ```
 
-### Example 4: Function with Operator Calls
+### 示例 4：带运算符调用的函数
 
 ```python
 # def matmul(a, b) -> tensor:
@@ -216,7 +216,7 @@ return_types = [ir.TensorType([shape_m, shape_n], DataType.FP32)]
 func = ir.Function("matmul", [a, b], return_types, body, span)
 ```
 
-### Example 5: Program with Multiple Functions
+### 示例 5：包含多个函数的程序
 
 ```python
 # Helper: square(x) -> int { return x * x }
@@ -243,7 +243,7 @@ main_func = ir.Function("sum_squares", [a, b], [ir.ScalarType(dtype)], main_body
 program = ir.Program([square_func, main_func], "math", span)
 ```
 
-### Example 6: Memory Layout with TileType
+### 示例 6：使用 TileType 的内存布局
 
 ```python
 # 32x32 tile in Left memory with custom stride
@@ -258,27 +258,27 @@ tile_view.start_offset = ir.ConstInt(0, DataType.INT64, span)
 tile_type = ir.TileType(shape, DataType.FP16, memref, tile_view)
 ```
 
-## Type System Summary
+## 类型系统总结
 
-| Type | Dimensions | Memory Info | Use Case |
-| ---- | ---------- | ----------- | -------- |
-| **ScalarType** | 0 | - | Single values |
-| **TensorType** | N (any) | Optional MemRef | General tensors |
-| **TileType** | N (any)* | Optional MemRef + TileView | Hardware-optimized tiles |
-| **TupleType** | - | - | Multiple return values |
-| **PipeType** | - | - | Hardware synchronization |
-| **UnknownType** | - | - | Type inference placeholder |
+| 类型 | 维度 | 内存信息 | 使用场景 |
+| ---- | ---- | -------- | -------- |
+| **ScalarType** | 0 | - | 单个值 |
+| **TensorType** | N（任意） | 可选 MemRef | 通用张量 |
+| **TileType** | N（任意）* | 可选 MemRef + TileView | 硬件优化 Tile |
+| **TupleType** | - | - | 多返回值 |
+| **PipeType** | - | - | 硬件同步 |
+| **UnknownType** | - | - | 类型推断占位符 |
 
-## Common Patterns
+## 常用模式
 
-**Creating constants:**
+**创建常量：**
 
 ```python
 i32 = ir.ConstInt(42, DataType.INT32, span)
 f32 = ir.ConstFloat(3.14, DataType.FP32, span)
 ```
 
-**Creating operators:**
+**创建运算符：**
 
 ```python
 # High-level API (recommended)
@@ -288,13 +288,13 @@ call = ir.op.tensor.matmul(a, b, out_dtype=DataType.FP32)
 call = ir.create_op_call("tensor.matmul", [a, b], {"out_dtype": DataType.FP32}, span)
 ```
 
-**Statement sequences:**
+**语句序列：**
 
 ```python
 seq = ir.SeqStmts([stmt1, stmt2, stmt3], span)
 ```
 
-## Type Checking and Casting
+## 类型检查与转换
 
 ```python
 # Check expression types
@@ -307,25 +307,25 @@ if isinstance(type_obj, ir.TileType):
     shape = type_obj.shape
 ```
 
-## Related Documentation
+## 相关文档
 
-- [IR Overview](00-overview.md) - Core concepts and design principles
-- [IR Node Hierarchy](01-ir_hierarchy.md) - Complete node type reference
-- [Structural Comparison](03-structural_comparison.md) - Equality and hashing utilities
+- [IR 概述](00-overview.md) - 核心概念与设计原则
+- [IR 节点层次结构](01-hierarchy.md) - 完整节点类型参考
+- [结构比较](03-structural_comparison.md) - 相等性和哈希工具
 
-## Summary
+## 总结
 
-PyPTO's type system provides:
+PyPTO 的类型系统提供：
 
-- **Scalar types** for primitive values
-- **Tensor/Tile types** for multi-dimensional data with memory layout
-- **Tuple types** for heterogeneous collections
-- **Pipe types** for hardware synchronization
+- **标量类型** 用于原始值
+- **张量/Tile 类型** 用于带内存布局的多维数据
+- **元组类型** 用于异构集合
+- **管线类型** 用于硬件同步
 
-The IR construction API supports:
+IR 构建 API 支持：
 
-- Immutable node creation with shared pointers
-- Type-safe operations with compile-time checking
-- Hardware-aware memory management via MemRef and TileView
-- Intra-program function calls via GlobalVar
-- Loop-carried dependencies via IterArg
+- 通过共享指针创建不可变节点
+- 带编译时检查的类型安全操作
+- 通过 MemRef 和 TileView 实现硬件感知的内存管理
+- 通过 GlobalVar 实现程序内函数调用
+- 通过 IterArg 实现循环传递依赖
