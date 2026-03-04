@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# System: Python 3.10, g++-15, build essentials
+# System: Python 3.10, gcc/g++-15, build essentials
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
@@ -10,8 +10,14 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       python3.10 python3.10-dev python3.10-venv \
-      g++-15 git curl ca-certificates && \
+      gcc-15 g++-15 git curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Set gcc/g++-15 as default compilers
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 1 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 1 && \
+    update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-15 1 && \
+    update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-15 1
 
 # Python 3.10 as default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
@@ -33,3 +39,6 @@ RUN pip install --no-cache-dir \
 # torch CPU (heaviest package, separate layer for caching)
 RUN pip install --no-cache-dir \
       torch --index-url https://download.pytorch.org/whl/cpu
+
+# Fix pip cache permissions for GitHub Actions containers
+ENV PIP_CACHE_DIR=/tmp/pip-cache
