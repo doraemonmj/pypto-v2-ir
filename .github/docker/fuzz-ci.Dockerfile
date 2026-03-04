@@ -1,0 +1,35 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# System: Python 3.10, g++-15, build essentials
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      python3.10 python3.10-dev python3.10-venv \
+      g++-15 git curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Python 3.10 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python
+
+# Build tools (needed by pip install -e .)
+RUN pip install --no-cache-dir \
+      "scikit-build-core>=0.10.0" "nanobind>=2.0.0" \
+      "ninja>=1.11.0" "cmake>=3.15"
+
+# Project runtime + dev dependencies
+RUN pip install --no-cache-dir \
+      "numpy>=2.0" \
+      "pytest>=7.0.0" "pytest-forked>=1.0" pytest-xdist \
+      "pyright==1.1.407" "ruff==0.14.8" "clang-tidy==21.1.0" \
+      pre-commit
+
+# torch CPU (heaviest package, separate layer for caching)
+RUN pip install --no-cache-dir \
+      torch --index-url https://download.pytorch.org/whl/cpu
