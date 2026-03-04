@@ -41,4 +41,7 @@ RUN pip install --no-cache-dir \
       torch --index-url https://download.pytorch.org/whl/cpu
 
 # Fix pip cache permissions for GitHub Actions containers
-ENV PIP_CACHE_DIR=/tmp/pip-cache
+# Set compilers explicitly (pip build isolation looks for x86_64-linux-gnu-gcc)
+ENV PIP_CACHE_DIR=/tmp/pip-cache \
+    CC=gcc-15 \
+    CXX=g++-15
