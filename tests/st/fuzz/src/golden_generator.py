@@ -55,7 +55,9 @@ TORCH_OP_MAP: dict[str, Any] = {
     # Matrix operations
     "block.matmul": lambda v: f"torch.matmul({v[0]}, {v[1]})",
     # Shape operations
-    "block.reshape": lambda v, params=None: f"{v[0]}.reshape({list(params['target_shape'])})" if params else f"{v[0]}",
+    "block.reshape": lambda v, params=None: f"{v[0]}.reshape({list(params['target_shape'])})"
+    if params
+    else f"{v[0]}",
     "block.col_expand": lambda v: f"{v[1]}.expand_as({v[0]})",
 }
 

@@ -677,21 +677,16 @@ class KernelGenerator:
         offset = f"[{row_offset_expr}, 0]" if row_offset_expr else "[0, 0]"
 
         if store_var:
-            code_lines.append(
-                f"{ind}result = pl.store({store_var}, offsets={offset}, "
-                f"output_tensor=output)"
-            )
+            code_lines.append(f"{ind}result = pl.store({store_var}, offsets={offset}, output_tensor=output)")
         elif op_chain:
             last_output = op_chain[-1]["output"]
             code_lines.append(
-                f"{ind}result = pl.store({last_output}, offsets={offset}, "
-                f"output_tensor=output)"
+                f"{ind}result = pl.store({last_output}, offsets={offset}, output_tensor=output)"
             )
         else:
             first_input = inputs[0][0]
             code_lines.append(
-                f"{ind}result = pl.store(tile_{first_input}, offsets={offset}, "
-                f"output_tensor=output)"
+                f"{ind}result = pl.store(tile_{first_input}, offsets={offset}, output_tensor=output)"
             )
 
         return code_lines
