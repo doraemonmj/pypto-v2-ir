@@ -513,6 +513,37 @@ def cond(condition: CondArg) -> None:
     pass
 
 
+def static_print(*args: Any) -> None:
+    """Print compile-time information about IR objects.
+
+    At parse time, prints type/value info to stdout. At runtime, no-op.
+
+    Args:
+        *args: Values to print (variables, expressions, string labels)
+    """
+
+
+def static_assert(condition: Any, msg: str = "") -> None:
+    """Assert a condition at compile time (parse time).
+
+    At parse time, evaluates ``condition``. If false, raises ``ParserError``.
+    At runtime, this is a no-op (all semantics are handled by the parser).
+
+    Notes:
+        * This is a **statement-only** construct. It must be used as a
+          standalone statement, not as part of an expression.
+        * The ``msg`` argument must be a **string literal** at the call site.
+          Passing a variable or expression for ``msg`` will raise
+          ``ParserSyntaxError``.
+        * The check is evaluated at parse time only; it does not run at
+          execution time.
+
+    Args:
+        condition: Condition to check (must be compile-time evaluable)
+        msg: Optional error message as a string literal
+    """
+
+
 class IncoreContext:
     """Context manager for InCore scope.
 
@@ -621,6 +652,8 @@ __all__ = [
     "while_",
     "yield_",
     "cond",
+    "static_print",
+    "static_assert",
     "incore",
     "auto_incore",
     "cluster",
